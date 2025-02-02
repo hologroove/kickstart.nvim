@@ -66,7 +66,12 @@ return {
         end, { desc = 'git [D]iff against last commit' })
         -- Toggles
         map('n', '<leader>tb', gitsigns.toggle_current_line_blame, { desc = '[T]oggle git show [b]lame line' })
-        map('n', '<leader>tD', gitsigns.toggle_deleted, { desc = '[T]oggle git show [D]eleted' })
+        -- map('n', '<leader>h]', function()
+        --   gitsigns.nav_hunk('next', { preview = true })
+        -- end, { desc = 'git [h]hunk next' })
+        -- map('n', '<leader>h[', function()
+        --   gitsigns.nav_hunk('prev', { preview = true })
+        -- end, { desc = 'git [h]hunk prev' })
       end,
     },
   },

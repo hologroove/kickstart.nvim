@@ -173,7 +173,7 @@ vim.keymap.set('n', '<leader>cq', vim.diagnostic.setloclist, { desc = 'Open [C]o
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+-- vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -383,7 +383,7 @@ require('lazy').setup({
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
-    branch = '0.1.x',
+    branch = 'master',
     dependencies = {
       'nvim-lua/plenary.nvim',
       { -- If encountering errors, see telescope-fzf-native README for installation instructions
@@ -431,18 +431,77 @@ require('lazy').setup({
         --  All the info you're looking for is in `:help telescope.setup()`
         --
         defaults = {
+          preview = {
+            ls_short = true,
+            mime_hook = function(filepath, bufnr, opts)
+              local is_image = function(filepath)
+                local image_extensions = { 'png', 'jpg', 'jpeg', 'gif' } -- Supported image formats
+                local split_path = vim.split(filepath:lower(), '.', { plain = true })
+                local extension = split_path[#split_path]
+                return vim.tbl_contains(image_extensions, extension)
+              end
+              if is_image(filepath) then
+                local term = vim.api.nvim_open_term(bufnr, {})
+                local function send_output(_, data, _)
+                  for _, d in ipairs(data) do
+                    vim.api.nvim_chan_send(term, d .. '\r\n')
+                  end
+                end
+                vim.fn.jobstart('chafa "' .. filepath .. '" --format symbols  --symbols vhalf', { on_stdout = send_output, stdout_buffered = true, pty = true })
+                -- vim.fn.jobstart({
+                --   'chafa',
+                --   filepath, -- Terminal image viewer command
+                --   ' --format symbols',
+                -- }, { on_stdout = send_output, stdout_buffered = true, pty = true })
+              else
+                require('telescope.previewers.utils').set_preview_message(bufnr, opts.winid, 'Binary cannot be previewed')
+              end
+            end,
+          },
 
-          -- Format path as "file.txt (path\to\file\)"
+          layout_config = {
+            horizontal = {
+              preview_width = require('telescope.config.resolve').resolve_width(function(_, max_columns, _)
+                if max_columns < 100 then
+                  return math.floor(max_columns * 0.4)
+                else
+                  return math.floor(max_columns * 0.55)
+                end
+              end),
+            },
+          },
+
           path_display = function(opts, path)
             local tail = require('telescope.utils').path_tail(path)
-            return string.format('%s  -  (%s)', tail, path)
+            path = string.format('%s (%s)', tail, path)
+
+            local highlights = {
+              {
+                {
+                  #tail, -- highlight start position
+                  #path, -- highlight end position
+                },
+                'Comment', -- highlight group name
+              },
+            }
+
+            return path, highlights
           end,
+
+          -- -- Format path as "file.txt (path\to\file\)"
+          -- path_display = function(opts, path)
+          --   local tail = require('telescope.utils').path_tail(path)
+          --   return string.format('%s  -  (%s)', tail, path)
+          -- end,
 
           -- -- only display filename
           -- path_display = { 'tail' },
 
           mappings = {
-            i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+            i = {
+              ['<c-enter>'] = 'to_fuzzy_refine',
+              ['<esc>'] = require('telescope.actions').close,
+            },
           },
         },
         -- pickers = {}
@@ -477,7 +536,9 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader><leader>', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader><leader>', function()
+        builtin.git_files { use_file_path = true }
+      end, { desc = 'Search Git Files' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -861,6 +922,7 @@ require('lazy').setup({
       --  into multiple repos for maintenance purposes.
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-path',
+      'hrsh7th/cmp-buffer',
     },
     config = function()
       -- See `:help cmp`
@@ -937,6 +999,7 @@ require('lazy').setup({
           { name = 'nvim_lsp' },
           { name = 'luasnip' },
           { name = 'path' },
+          { name = 'buffer' },
         },
       }
     end,
