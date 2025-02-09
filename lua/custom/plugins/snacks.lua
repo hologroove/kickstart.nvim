@@ -17,7 +17,7 @@ return {
     --     -- statuscolumn = { enabled = true },
     --     -- words = { enabled = true },
     projects = {
-      dev = { '~' },
+      dev = { '~', '~/.config', '~/dev' },
       recent = true,
     },
   },
@@ -29,7 +29,7 @@ return {
     { '<leader>/', function() Snacks.picker.grep() end, desc = 'Grep', },
     -- { '<leader>:', function() Snacks.picker.command_history() end, desc = 'Command History', },
     -- { '<leader>n', function() Snacks.picker.notifications() end, desc = 'Notification History', },
-    { '<leader>e', function() Snacks.explorer({layout='default'}) end, desc = 'FilesExplorer',s},
+    { '<leader>e', function() Snacks.explorer({ layout='default', auto_close = true }) end, desc = 'FilesExplorer',s},
     -- find
     { '<leader>bb', function() Snacks.picker.buffers() end, desc = 'Buffers', },
     { '<leader>fc', function() Snacks.picker.files { cwd = vim.fn.stdpath 'config' } end, desc = 'Find Config File', },
